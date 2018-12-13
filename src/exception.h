@@ -13,12 +13,14 @@ namespace cv_camera
  * @brief ROS cv camera device exception.
  *
  */
+
 class DeviceError : public std::runtime_error
 {
  public:
   explicit DeviceError(const std::string &cause):
       std::runtime_error(cause) {}
 };
+
 
 }  // end namespace cv_camera
 
