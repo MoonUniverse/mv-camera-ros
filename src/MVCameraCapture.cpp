@@ -2,7 +2,10 @@
 #include <string>
 
 #include "MVCameraCapture.h"
+#include <sensor_msgs/Imu.h>
 
+extern ros::Time Imutimestamp;
+extern uint32_t triggerCounter;
 
 namespace cv_camera
 {
@@ -109,16 +112,20 @@ void MVCameraCapture::open(int32_t device_id)
   }
 
   CameraGetCapability(hCamera_,&tCapability);
-  std::cout << "buffer size" <<  tCapability.sResolutionRange.iHeightMax*tCapability.sResolutionRange.iWidthMax*3 << std::endl;
-  rgbBuffer_ = (unsigned char*)malloc(tCapability.sResolutionRange.iHeightMax*tCapability.sResolutionRange.iWidthMax*3);
+  std::cout << "buffer size" <<  tCapability.sResolutionRange.iHeightMax*tCapability.sResolutionRange.iWidthMax << std::endl;
+  rgbBuffer_ = (unsigned char*)malloc(tCapability.sResolutionRange.iHeightMax*tCapability.sResolutionRange.iWidthMax);
 
 
   tSdkImageResolution psCurVideoSize;
 
   CameraGetImageResolution(hCamera_, &psCurVideoSize);
-  psCurVideoSize.iWidthZoomHd = 1024;
-  psCurVideoSize.iHeightZoomHd = 1024;
- CameraSetImageResolution(hCamera_, &psCurVideoSize);
+  psCurVideoSize.iWidthZoomHd = 640;
+  psCurVideoSize.iHeightZoomHd = 480;
+  CameraSetImageResolution(hCamera_, &psCurVideoSize);
+
+  CameraSetTriggerMode(hCamera_,2);
+
+  CameraSetExtTrigSignalType(hCamera_,1);
 
   CameraPlay(hCamera_);
 
@@ -144,54 +151,23 @@ void MVCameraCapture::open()
   open(0);
   // CameraSetAeState(hCamera_,FALSE);
 }
-
 bool MVCameraCapture::capture()
 {
   uchar * pbyBuffer =0;
+
   if(CameraGetImageBuffer(hCamera_, &frameInfo_,&pbyBuffer,1000) == CAMERA_STATUS_SUCCESS)
   {
     CameraImageProcess(hCamera_, pbyBuffer, rgbBuffer_, &frameInfo_);
-    //char *buffer = (char *)malloc(2048 * 2048 * 3);
-    //memcpy(rgbBuffer_, buffer, 2048 * 2048 * 3);
-    bridge_.image = cv::Mat(frameInfo_.iHeight, frameInfo_.iWidth, CV_8UC3, rgbBuffer_, cv::Mat::AUTO_STEP);
 
-     // std::cout << bridge_.image.rows << std::endl;
-    cv::resize(bridge_.image, bridge_.image, cv::Size(1024, 1024));
+    bridge_.image = cv::Mat(frameInfo_.iHeight, frameInfo_.iWidth, CV_8UC1, rgbBuffer_, cv::Mat::AUTO_STEP);
 
-    //bridge_.image = image;
-
-    //cv::imshow("iamge", image);
-    //cv::waitKey(30);
-
-    ros::Time now = ros::Time::now();
-    bridge_.encoding = enc::BGR8;
-    bridge_.header.stamp = now;
+    bridge_.encoding = enc::MONO8;
+    bridge_.header.stamp = Imutimestamp;
     bridge_.header.frame_id = frame_id_;
 
     info_ = info_manager_.getCameraInfo();
-    if (info_.height == 0 && info_.width == 0)
-    {
-      info_.height = bridge_.image.rows;
-      info_.width = bridge_.image.cols;
-    }
-    else if (info_.height != bridge_.image.rows || info_.width != bridge_.image.cols)
-    {
-      if (rescale_camera_info_)
-      {
-        int old_width = info_.width;
-        int old_height = info_.height;
-        rescaleCameraInfo(bridge_.image.cols, bridge_.image.rows);
-        ROS_INFO_ONCE("Camera calibration automatically rescaled from %dx%d to %dx%d",
-                      old_width, old_height, bridge_.image.cols, bridge_.image.rows);
-      }
-      else
-      {
-        ROS_WARN_ONCE("Calibration resolution %dx%d does not match camera resolution %dx%d. "
-                      "Use rescale_camera_info param for rescaling",
-                      info_.width, info_.height, bridge_.image.cols, bridge_.image.rows);
-      }
-    }
-    info_.header.stamp = now;
+
+    info_.header.stamp = Imutimestamp;
     info_.header.frame_id = frame_id_;
 
 
@@ -203,22 +179,16 @@ bool MVCameraCapture::capture()
 
 void MVCameraCapture::publish()
 {
-  pub_.publish(*getImageMsgPtr(), info_);
+  pub_.publish(*getImageMsgPtr(), info_);//*getImageMsgPtr(),
 }
 
 void MVCameraCapture::setExposure(double value)
 {
-  if (autoExposureOn_)
-    CameraSetAeTarget(hCamera_, value);
-  else
     CameraSetExposureTime(hCamera_, value);
-
 }
 
 void MVCameraCapture::setGain(double value)
 {
-  //CameraSetGain(hCamera_, value, value, value);
-  if (!autoGainOn_)
     CameraSetAnalogGain(hCamera_, value);
 }
 
