@@ -163,6 +163,8 @@ public:
   void triggerWhiteBalance();
 
 
+
+
 private:
   /**
    * @brief rescale camera calibration to another resolution
@@ -237,8 +239,12 @@ private:
   int hCamera_;
   tSdkFrameHead frameInfo_;
 
+
 };
 
 } // namespace cv_camera
+
+
+
 
 #endif // CV_CAMERA_CAPTURE_H
