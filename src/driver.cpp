@@ -33,7 +33,7 @@ void Driver::setup()
   private_node_.getParam("device_id", device_id);
   private_node_.getParam("frame_id", frame_id);
 
-  int32_t image_width(752);
+  int32_t image_width(640);
   int32_t image_height(480);
 
   camera_.reset(new MVCameraCapture(camera_node_,
@@ -59,9 +59,9 @@ void Driver::setup()
     }
   }
   camera_->setAutoExposureMode(false);
-  camera_->setExposure(10000.0);
+  camera_->setExposure(15000.0);
   camera_->setAutoGainMode(false);
-  camera_->setGain(40);
+  camera_->setGain(30);
 }
 
 
