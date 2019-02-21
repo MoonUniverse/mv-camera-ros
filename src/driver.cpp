@@ -59,7 +59,7 @@ void Driver::setup()
     }
   }
   camera_->setAutoExposureMode(false);
-  camera_->setExposure(15000.0);
+  camera_->setExposure(20000.0);
   camera_->setAutoGainMode(false);
   camera_->setGain(30);
 }
