@@ -7,7 +7,7 @@
 uint32_t triggerCounter;
 ros::Time Imutimestamp;
 void callback(const sensor_msgs::TimeReference::ConstPtr &time_ref) {
-     Imutimestamp = time_ref->header.stamp;
+     Imutimestamp = time_ref->header.stamp + ros::Duration(0.105);
      triggerCounter = time_ref->header.seq;
 }
 
